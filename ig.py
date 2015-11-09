@@ -3,7 +3,7 @@
     Wrapper for IG's REST Trading API
 """
 __author__ = "Raul Catalina"
-__version__ = '0.1.0'
+__version__ = "0.1.0"
 
 
 import requests
@@ -14,6 +14,7 @@ class IG(object):
     """ """
 
     class InvalidOperationException(Exception): pass
+    class InvalidArgumentException(Exception): pass
 
 
     ALLOWED_OPERATIONS = ['get', 'put', 'post', 'delete']
@@ -145,19 +146,68 @@ class IG(object):
             self.request('delete', 'session')
 
 
-    def getAccountsInfo(self):
+    def getAccounts(self):
         """ """
         reponse = self.request('get', 'accounts')
         return reponse.json()
 
 
-    def getMarketCategories(self):
+    def getHistoryActivity(self, start_date=None, end_date=None, max_span_seconds=600, page_size=0, page_number=1):
         """ """
-        response = self.request('get', 'marketnavigation')
+        params = {
+            'maxSpanSeconds': max_span_seconds,
+            'pageSize': page_size,
+            'pageNumber': page_number
+        }
+
+        if start_date is not None:
+            params['from'] = start_date
+
+        if end_date is not None:
+            params['to'] = end_date
+
+        reponse = self.request('get', 'history/activity', params=params, version=2)
+        return reponse.json()
+
+
+    def getMarketCategories(self, node_id=None):
+        """ 
+        Returns all top-level nodes (market categories) in the market navigation hierarchy.
+        
+        Args:
+            node_id: Optional. Node's ID
+        """
+        if node_id is None:
+            response = self.request('get', 'marketnavigation')
+
+        else:
+            response = self.request('get', 'marketnavigation/{0}'.format(node_id))
 
         #self._print(response.headers)
 
         return response.json()
 
 
+    def getMarketDetails(self, epic):
+        """ 
+        Returns the details of the given market
+        
+        Args:
+            epic: Mandatory. String or List of strings with the epic of the market to be retrieved
+        """
+        epic_type = type(epic)
+
+        if epic_type == type(str()):
+            response = self.request('get', '/markets/{0}'.format(epic), version=3)
+
+        elif epic_type == type(list()):
+            response = self.request('get', '/markets?epics={0}'.format(','.join(epic)), version=2)
+
+        else:
+            raise IG.InvalidArgumentException(
+                'Invalid type of argument "epic", it must be a string '
+                'or a list of strings, {0} given'.format(epic_type.__name__)
+            )
+
+        return response.json()
 
