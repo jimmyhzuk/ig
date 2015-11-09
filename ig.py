@@ -1,9 +1,10 @@
 # encoding: utf-8
-'''
-Created on 31/10/2015
+"""
+    Wrapper for IG's REST Trading API
+"""
+__author__ = "Raul Catalina"
+__version__ = '0.1.0'
 
-@author: raul
-'''
 
 import requests
 from pprint import pprint as pp
