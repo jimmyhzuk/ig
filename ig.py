@@ -102,8 +102,7 @@ class IG(object):
             response = requests.get(url, params=params, headers=headers)
 
         elif operation == 'put':
-            #response = requests.post(url, json=params, headers=headers)
-            pass
+            response = requests.put(url, data=params, headers=headers)
 
         elif operation == 'post':
             response = requests.post(url, json=params, headers=headers)
@@ -120,6 +119,10 @@ class IG(object):
         return response
 
 
+    ########################################################################
+    #                                 Login
+    ########################################################################
+
     def login(self):
         """ 
         login the session
@@ -131,6 +134,7 @@ class IG(object):
         }
 
         response = self.request('post', 'session', params=params, version=2)
+        #account_info = response.json()
 
         self.__xst = response.headers['X-SECURITY-TOKEN']
         self.__cst = response.headers['CST']
@@ -146,13 +150,25 @@ class IG(object):
             self.request('delete', 'session')
 
 
+    def getEncryptionKey(self):
+        """ """
+        reponse = self.request('get', '/session/encryptionKey')
+        return reponse.json()
+
+
+    ########################################################################
+    #                                Account
+    ########################################################################
+    # TODO: Implement the rest of methods
+
     def getAccounts(self):
         """ """
         reponse = self.request('get', 'accounts')
         return reponse.json()
 
 
-    def getHistoryActivity(self, start_date=None, end_date=None, max_span_seconds=600, page_size=0, page_number=1):
+    def getHistoryActivity(self, start_date=None, end_date=None, max_span_seconds=600,
+                           page_size=20, page_number=1):
         """ """
         params = {
             'maxSpanSeconds': max_span_seconds,
@@ -169,6 +185,32 @@ class IG(object):
         reponse = self.request('get', 'history/activity', params=params, version=2)
         return reponse.json()
 
+
+    def getHistoryTransactions(self, transaction_type='ALL', start_date=None, end_date=None,
+                               max_span_seconds=600, page_size=20, page_number=1):
+        """ 
+        Transaction type: ALL (default), ALL_DEAL, DEPOSIT, WITHDRAWAL
+        """
+        params = {
+            'type': transaction_type,
+            'maxSpanSeconds': max_span_seconds,
+            'pageSize': page_size,
+            'pageNumber': page_number
+        }
+
+        if start_date is not None:
+            params['from'] = start_date
+
+        if end_date is not None:
+            params['to'] = end_date
+
+        reponse = self.request('get', 'history/transactions', params=params, version=2)
+        return reponse.json()
+
+
+    ########################################################################
+    #                                Markets
+    ########################################################################
 
     def getMarketCategories(self, node_id=None):
         """ 
@@ -210,4 +252,48 @@ class IG(object):
             )
 
         return response.json()
+
+
+    def findMarket(self, search_term):
+        """
+        Returns all markets matching the search term
+        """
+        response = self.request('get', '/markets?searchTerm={0}'.format(search_term))
+        return response.json()
+
+
+    ########################################################################
+    #                                Dealing
+    ########################################################################
+
+    def getPositions(self):
+        """ 
+        Returns all open positions for the active account
+        """
+        response = self.request('get', '/positions', version=2)
+        return response.json()
+
+
+    ########################################################################
+    #                                General
+    ########################################################################
+
+    def getApps(self):
+        """ """
+        response = self.request('get', '/operations/application')
+        return response.json()
+
+
+    def switchApp(self):
+        """ """
+        pass
+
+
+    def disableCurrentApp(self):
+        """ 
+        TODO: Avoid logout() method crashes when disable the current APP
+        """
+        response = self.request('put', '/operations/application/disable')
+        return response.json()
+
 
